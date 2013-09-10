@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@git.corp.yahoo.com:keugene/yui-pathogen-decoder.git"
+    "url": "git@github.com:ekashida/yui-pathogen-decoder.git"
   },
   "keywords": [
     "yui",
