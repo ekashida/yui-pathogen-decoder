@@ -142,10 +142,20 @@ exports.decode = function (url, callback) {
                 );
             }
         }
-        // Application module groups don't have names.
+        // Application module groups with build directories similar to YUI
+        // modules are compressed using the `root` followed by a list of module
+        // names.
         // [ group version, modules ]
         else if (parts.length === 2) {
             decoded = exports.appDecoder.apply(null, parts);
+        }
+        // Application modules with paths that were not compressed are simply
+        // represented as a group containing a single path.
+        else if (parts.length === 1) {
+            decoded = {
+                name: 'path',
+                modules: parts
+            };
         }
         else {
             return callback(
