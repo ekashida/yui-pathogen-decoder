@@ -1,3 +1,9 @@
+/*
+ * Copyright 2014 Yahoo! Inc. All rights reserved.
+ * Licensed under the BSD License.
+ * http://yuilibrary.com/license/
+ */
+
 var NAMESPACE           = 'p';
 var GROUP_DELIMITER     = ';';
 var MODULE_DELIMITER    = ',';
