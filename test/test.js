@@ -11,7 +11,107 @@ describe('namespace', function () {
 
 });
 
-describe('decode', function () {
+describe('decode()', function () {
+
+    it('should decode hash modules', function () {
+        strategy.decode({
+            path: '/1+nobi/shizu+abcde.debug.js',
+            query: {}
+        }, function (err, decoded) {
+            var group   = decoded.groups[0],
+                modules = group.modules;
+
+            assert.strictEqual(err, null, 'unexpected error');
+            assert.strictEqual(decoded.filter, 'debug', 'unexpected filter');
+            assert.strictEqual(decoded.type, 'js', 'unexpected type');
+            assert.strictEqual(decoded.groups.length, 1, 'unexpected number of groups');
+            assert.strictEqual(group.name, 'hash', 'unexpected group name');
+            assert.strictEqual(modules.length, 5, 'unexpected number of modules');
+            assert.strictEqual(group.version, 'nobi/shizu', 'unexpected version');
+
+            assert.strictEqual(modules[0], 'a', 'unexpected module name');
+            assert.strictEqual(modules[1], 'b', 'unexpected module name');
+            assert.strictEqual(modules[2], 'c', 'unexpected module name');
+            assert.strictEqual(modules[3], 'd', 'unexpected module name');
+            assert.strictEqual(modules[4], 'e', 'unexpected module name');
+        });
+
+        strategy.decode({
+            path: '/3+nobi/dora+aaabbbcccdddeee.js',
+            query: {}
+        }, function (err, decoded) {
+            var group   = decoded.groups[0],
+                modules = group.modules;
+
+            assert.strictEqual(err, null, 'unexpected error');
+            assert.strictEqual(decoded.filter, 'min', 'unexpected filter');
+            assert.strictEqual(decoded.type, 'js', 'unexpected type');
+            assert.strictEqual(decoded.groups.length, 1, 'unexpected number of groups');
+            assert.strictEqual(group.name, 'hash', 'unexpected group name');
+            assert.strictEqual(modules.length, 5, 'unexpected number of modules');
+            assert.strictEqual(group.version, 'nobi/dora', 'unexpected version');
+
+            assert.strictEqual(modules[0], 'aaa', 'unexpected module name');
+            assert.strictEqual(modules[1], 'bbb', 'unexpected module name');
+            assert.strictEqual(modules[2], 'ccc', 'unexpected module name');
+            assert.strictEqual(modules[3], 'ddd', 'unexpected module name');
+            assert.strictEqual(modules[4], 'eee', 'unexpected module name');
+        });
+
+        strategy.decode({
+            path: '/4+nobi/dora+aaaabbbbccccddddeeee;2+nobi/shizu+xxyyzz.raw.js',
+            query: {}
+        }, function (err, decoded) {
+            var groups = decoded.groups,
+                modules,
+                group;
+
+            assert.strictEqual(err, null, 'unexpected error');
+            assert.strictEqual(decoded.filter, 'raw', 'unexpected filter');
+            assert.strictEqual(decoded.type, 'js', 'unexpected type');
+            assert.strictEqual(decoded.groups.length, 2, 'unexpected number of groups');
+
+            group   = groups[0];
+            modules = group.modules;
+
+            assert.strictEqual(group.name, 'hash', 'unexpected group name');
+            assert.strictEqual(modules.length, 5, 'unexpected number of modules');
+            assert.strictEqual(group.version, 'nobi/dora', 'unexpected version');
+
+            assert.strictEqual(modules[0], 'aaaa', 'unexpected module name');
+            assert.strictEqual(modules[1], 'bbbb', 'unexpected module name');
+            assert.strictEqual(modules[2], 'cccc', 'unexpected module name');
+            assert.strictEqual(modules[3], 'dddd', 'unexpected module name');
+            assert.strictEqual(modules[4], 'eeee', 'unexpected module name');
+
+            group   = groups[1];
+            modules = group.modules;
+
+            assert.strictEqual(group.name, 'hash', 'unexpected group name');
+            assert.strictEqual(modules.length, 3, 'unexpected number of modules');
+            assert.strictEqual(group.version, 'nobi/shizu', 'unexpected version');
+
+            assert.strictEqual(modules[0], 'xx', 'unexpected module name');
+            assert.strictEqual(modules[1], 'yy', 'unexpected module name');
+            assert.strictEqual(modules[2], 'zz', 'unexpected module name');
+        });
+
+        strategy.decode({
+            path: '/0+nobi/dora+aaabbbcccdddeee.js',
+            query: {}
+        }, function (err, decoded) {
+            assert(err instanceof Error, 'expected an error');
+            assert.strictEqual(decoded, undefined, 'unexpected decoded object');
+        });
+
+        strategy.decode({
+            path: '/-2+nobi/dora+aaabbbcccdddeee.js',
+            query: {}
+        }, function (err, decoded) {
+            assert(err instanceof Error, 'expected an error');
+            assert.strictEqual(decoded, undefined, 'unexpected decoded object');
+        });
+    });
 
     it('should decode core modules', function () {
         strategy.decode({

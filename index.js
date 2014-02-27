@@ -63,6 +63,38 @@ function galleryDecoder (name, version, modules) {
     };
 }
 
+/**
+ * Decoder for the hash module group
+ * @method hashDecoder
+ * @param {String} length Length of individual hash
+ * @param {String} version Module group version
+ * @param {String[]} hash Module list hash
+ * @return {Object} Decoded module group
+ */
+function hashDecoder (length, version, hash) {
+    var modules = [],
+        index   = 0;
+
+    if (length < 1) {
+        return new Error('Hash length must be at least 1');
+    }
+
+    if (hash.length % length) {
+        return new Error('Module list hash has unexpected length');
+    }
+
+    while (index < hash.length) {
+        modules.push(hash.substr(index, length));
+        index += length;
+    }
+
+    return {
+        name:       'hash',
+        version:    version,
+        modules:    modules
+    };
+}
+
 // Decoder lookup via group type. The hash decoder is not in here because its
 // group type is inferred when the type is an integer.
 var DECODER = {
@@ -105,6 +137,10 @@ exports.decodeGroup = function (group) {
             // replace short name with expanded name ('g' => 'gallery')
             parts[0] = expandedName;
             decoder = DECODER[expandedName];
+        } else if (!isNaN(+name)) {
+            // replace string with number equivalent ('5' => 5)
+            parts[0] = +name;
+            decoder = hashDecoder;
         } else {
             return new Error('Unrecognized module group ' + name);
         }
