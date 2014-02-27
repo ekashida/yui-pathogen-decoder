@@ -17,24 +17,33 @@ var VALIDATOR = {
     }
 };
 
-exports.simpleDecoderFactory = function (name) {
-    return function (version, modules) {
-        return {
-            name:       name,
-            modules:    modules.split(MODULE_DELIMITER),
-            version:    version
-        };
-    };
-};
+var NOOP = function () {};
 
 /**
- * Decoder for the gallery module group. Exported for testing purposes.
+ * Decoder for groups that don't require additional processing
+ * @method simpleDecoder
+ * @param {String} name Module group name
+ * @param {String} version Module group version
+ * @param {String[]} modules Module names
+ * @return {Object} Decoded module group
+ */
+function simpleDecoder (name, version, modules) {
+    return {
+        name:       name,
+        version:    version,
+        modules:    modules.split(MODULE_DELIMITER)
+    };
+}
+
+/**
+ * Decoder for the gallery module group
  * @method galleryDecoder
+ * @param {String} name Module group name
  * @param {String} version Gallery version (without `gallery-` prefix)
  * @param {String[]} modules Gallery module names (without `gallery-` prefix)
- * @return {Object} Decoded modules and version
+ * @return {Object} Decoded module group
  */
-exports.galleryDecoder = function (version, modules) {
+function galleryDecoder (name, version, modules) {
     var len,
         i;
 
@@ -49,16 +58,18 @@ exports.galleryDecoder = function (version, modules) {
 
     return {
         name:       'gallery',
-        modules:    modules,
-        version:    version
+        version:    version,
+        modules:    modules
     };
-};
+}
 
+// Decoder lookup via group type. The hash decoder is not in here because its
+// group type is inferred when the type is an integer.
 var DECODER = {
-    core:       exports.simpleDecoderFactory('core'),
-    root:       exports.simpleDecoderFactory('root'),
-    path:       exports.simpleDecoderFactory('path'),
-    gallery:    exports.galleryDecoder
+    core:       simpleDecoder,
+    root:       simpleDecoder,
+    path:       simpleDecoder,
+    gallery:    galleryDecoder
 };
 
 var groupNames = Object.keys(DECODER);
@@ -74,24 +85,26 @@ exports.namespace = function () {
 
 exports.decodeGroup = function (group) {
     var parts = group.split(GROUP_SUB_DELIMITER),
-        normalizedName,
-        decoded,
+        expandedName,
+        decoder,
         name;
 
-    // [ group name, group version, modules ]
+    // [ group name, group version, module names ]
     if (parts.length === 3) {
-        name = parts.shift();
+        name = parts[0];
 
         groupNames.some(function (groupName) {
-            // Support short group names (e.g., core => c, gallery => g)
+            // Support short group names ('c' for 'core', etc)
             if (groupName.indexOf(name) === 0) {
-                normalizedName = groupName;
+                expandedName = groupName;
                 return true;
             }
         });
 
-        if (normalizedName) {
-            decoded = DECODER[normalizedName].apply(null, parts);
+        if (expandedName) {
+            // replace short name with expanded name ('g' => 'gallery')
+            parts[0] = expandedName;
+            decoder = DECODER[expandedName];
         } else {
             return new Error('Unrecognized module group ' + name);
         }
@@ -104,7 +117,8 @@ exports.decodeGroup = function (group) {
     // names.
     // [ group version, modules ]
     else if (parts.length === 2) {
-        decoded = DECODER.root.apply(null, parts);
+        parts.unshift('root');
+        decoder = DECODER.root;
     }
     // XXX: For backwards compatibility. Remove after everyone moves off of
     // gallery-2013.10.09-22-56.
@@ -112,14 +126,14 @@ exports.decodeGroup = function (group) {
     // Application modules with paths that were not compressed are simply
     // represented as a group containing a single path.
     else if (parts.length === 1) {
-        decoded = {
-            name: 'path',
-            version: '',
-            modules: parts
-        };
+        parts = ['path', '', parts[0]];
+        decoder = DECODER.path;
+    } else {
+        decoder = NOOP;
     }
 
-    return decoded || new Error('Module group has unexpected format');
+    return decoder.apply(null, parts) ||
+        new Error('Module group has unexpected format');
 };
 
 exports.decode = function (url, callback) {
