@@ -246,15 +246,9 @@ describe('decode', function () {
         });
     });
 
-    it('should fail when too many or too few group components', function () {
+    it('should fail when too many group components', function () {
         strategy.decode({
-            path: '/core',
-            query: {}
-        }, function (err) {
-            assert(err instanceof Error, 'should fail when too few');
-        });
-        strategy.decode({
-            path: '/core+gallery+core+3.12.0+yui',
+            path: '/core+gallery+3.12.0+yui.js',
             query: {}
         }, function (err) {
             assert(err instanceof Error, 'should fail when too many');
